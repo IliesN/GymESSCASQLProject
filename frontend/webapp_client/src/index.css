@@ -1,0 +1,29 @@
+/* Removed Tailwind build directives to avoid PostCSS plugin errors.
+  Tailwind is loaded at runtime via CDN in index.html for now. */
+
+* {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: #09090b;
+  color: #fafafa;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+/* Helper classes from original CSS (kept minimal because Tailwind provides most) */
+.feature-card { background: #27272a; padding: 2rem; border-radius: .5rem; transition: transform .3s ease; }
+.feature-card:hover { transform: translateY(-4px); }
+.pricing-card { background: #18181b; border: 1px solid #27272a; padding: 2rem; border-radius: .5rem; transition: all .3s ease; }
+.pricing-card.featured { border-color: #fafafa; transform: scale(1.05); }
+.pricing-card:hover { border-color: #52525b; }
+.btn-primary { background: #fafafa; color: #09090b; padding: .75rem 2rem; border-radius: .375rem; font-weight: 600; transition: all .3s ease; border: none; cursor: pointer; }
+.btn-primary:hover { background: #e4e4e7; transform: translateY(-2px); }
+.btn-secondary { background: transparent; color: #fafafa; padding: .75rem 2rem; border: 1px solid #52525b; border-radius: .375rem; font-weight: 600; transition: all .3s ease; cursor: pointer; }
+.btn-secondary:hover { border-color: #fafafa; background: rgba(250,250,250,0.1); }

@@ -1,0 +1,57 @@
+{
+  "users": [
+    { "Id_User": 1, "Name": "John Smith", "Email": "john.smith@gym.com", "Phone": "555-1111", "DoB": "1990-04-12", "JoinDate": "2020-01-10", "Role": "Trainer", "Speciality": "Strength Training", "Salary": 3200.00 },
+    { "Id_User": 2, "Name": "Emily Johnson", "Email": "emily.johnson@gym.com", "Phone": "555-2222", "DoB": "1985-07-08", "JoinDate": "2019-06-15", "Role": "Trainer", "Speciality": "Yoga", "Salary": 3100.00 },
+    { "Id_User": 3, "Name": "Sarah Miller", "Email": "sarah.miller@gym.com", "Phone": "555-3333", "DoB": "1993-03-22", "JoinDate": "2023-02-01", "Role": "Customer", "Speciality": "", "Salary": 0.00 },
+    { "Id_User": 4, "Name": "David Lee", "Email": "david.lee@gym.com", "Phone": "555-4444", "DoB": "1998-09-14", "JoinDate": "2024-03-10", "Role": "Customer", "Speciality": "", "Salary": 0.00 },
+    { "Id_User": 5, "Name": "Olivia Brown", "Email": "olivia.brown@gym.com", "Phone": "555-5555", "DoB": "1992-12-25", "JoinDate": "2024-04-18", "Role": "Staff", "Speciality": "", "Salary": 2500.00 },
+    { "Id_User": 6, "Name": "Mark Taylor", "Email": "mark.taylor@gym.com", "Phone": "555-6666", "DoB": "1987-10-03", "JoinDate": "2018-08-12", "Role": "Trainer", "Speciality": "Cardio Fitness", "Salary": 3300.00 },
+    { "Id_User": 7, "Name": "Sophia Davis", "Email": "sophia.davis@gym.com", "Phone": "555-7777", "DoB": "1995-06-29", "JoinDate": "2024-05-02", "Role": "Customer", "Speciality": "", "Salary": 0.00 },
+    { "Id_User": 8, "Name": "Liam Wilson", "Email": "liam.wilson@gym.com", "Phone": "555-8888", "DoB": "1999-11-20", "JoinDate": "2024-07-19", "Role": "Customer", "Speciality": "", "Salary": 0.00 },
+    { "Id_User": 9, "Name": "Ava Martinez", "Email": "ava.martinez@gym.com", "Phone": "555-9999", "DoB": "1988-02-15", "JoinDate": "2022-11-10", "Role": "Trainer", "Speciality": "Pilates", "Salary": 3150.00 },
+    { "Id_User": 10, "Name": "Noah Anderson", "Email": "noah.anderson@gym.com", "Phone": "555-0000", "DoB": "1991-05-23", "JoinDate": "2021-09-01", "Role": "Staff", "Speciality": "", "Salary": 2600.00 }
+  ],
+  "equipment": [
+    { "Id_Equipment": 1, "Name": "Treadmill Pro X", "Type": "Cardio", "PurchaseDate": "2022-03-10", "MaintenanceDate": "2025-05-12", "Price": 2200.00, "Brand": "NordicTrack", "Condition_": "Excellent" },
+    { "Id_Equipment": 2, "Name": "Bench Press 2000", "Type": "Strength", "PurchaseDate": "2021-07-05", "MaintenanceDate": "2024-10-01", "Price": 900.00, "Brand": "Rogue", "Condition_": "Good" },
+    { "Id_Equipment": 3, "Name": "Yoga Mats", "Type": "Flexibility", "PurchaseDate": "2023-01-18", "MaintenanceDate": "2025-01-01", "Price": 250.00, "Brand": "Lululemon", "Condition_": "Good" },
+    { "Id_Equipment": 4, "Name": "Stationary Bike", "Type": "Cardio", "PurchaseDate": "2020-09-14", "MaintenanceDate": "2024-09-14", "Price": 1400.00, "Brand": "Peloton", "Condition_": "Fair" },
+    { "Id_Equipment": 5, "Name": "Dumbbell Set", "Type": "Strength", "PurchaseDate": "2022-11-25", "MaintenanceDate": "2025-02-10", "Price": 750.00, "Brand": "Bowflex", "Condition_": "Excellent" },
+    { "Id_Equipment": 6, "Name": "Rowing Machine", "Type": "Cardio", "PurchaseDate": "2023-04-05", "MaintenanceDate": "2025-04-05", "Price": 1800.00, "Brand": "Concept2", "Condition_": "Excellent" },
+    { "Id_Equipment": 7, "Name": "Pull-Up Bar", "Type": "Strength", "PurchaseDate": "2022-02-14", "MaintenanceDate": "2024-12-14", "Price": 200.00, "Brand": "Rogue", "Condition_": "Good" },
+    { "Id_Equipment": 8, "Name": "Kettlebells", "Type": "Strength", "PurchaseDate": "2021-11-30", "MaintenanceDate": "2025-01-15", "Price": 600.00, "Brand": "TRX", "Condition_": "Good" },
+    { "Id_Equipment": 9, "Name": "Resistance Bands", "Type": "Flexibility", "PurchaseDate": "2023-05-10", "MaintenanceDate": "2025-06-01", "Price": 150.00, "Brand": "TheraBand", "Condition_": "New" },
+    { "Id_Equipment": 10, "Name": "Stepper Machine", "Type": "Cardio", "PurchaseDate": "2022-10-25", "MaintenanceDate": "2024-10-25", "Price": 1300.00, "Brand": "Precor", "Condition_": "Good" }
+  ],
+  "products": [
+    { "Id_Products": 1, "ProductName": "Gym T-Shirt", "Category": "Apparel", "Description": "Breathable cotton gym shirt", "Price": 25.00, "StockQuantity": 50, "DateAdded": "2025-04-10", "Brand": "Nike" },
+    { "Id_Products": 2, "ProductName": "Protein Powder", "Category": "Supplement", "Description": "Whey protein 2lb", "Price": 45.00, "StockQuantity": 30, "DateAdded": "2025-03-12", "Brand": "Optimum Nutrition" },
+    { "Id_Products": 3, "ProductName": "Yoga Mat Deluxe", "Category": "Equipment", "Description": "Non-slip thick yoga mat", "Price": 35.00, "StockQuantity": 20, "DateAdded": "2025-02-28", "Brand": "Lululemon" },
+    { "Id_Products": 4, "ProductName": "Water Bottle", "Category": "Accessory", "Description": "Insulated stainless steel bottle", "Price": 15.00, "StockQuantity": 40, "DateAdded": "2025-01-20", "Brand": "HydroFlask" },
+    { "Id_Products": 5, "ProductName": "Gym Bag", "Category": "Accessory", "Description": "Spacious and durable gym bag", "Price": 40.00, "StockQuantity": 25, "DateAdded": "2025-05-05", "Brand": "Under Armour" },
+    { "Id_Products": 6, "ProductName": "Resistance Bands Set", "Category": "Equipment", "Description": "Pack of 5 strength bands", "Price": 30.00, "StockQuantity": 30, "DateAdded": "2025-04-01", "Brand": "TheraBand" },
+    { "Id_Products": 7, "ProductName": "Pre-Workout Drink", "Category": "Supplement", "Description": "Energy-boosting pre-workout mix", "Price": 28.00, "StockQuantity": 20, "DateAdded": "2025-03-18", "Brand": "C4" },
+    { "Id_Products": 8, "ProductName": "Foam Roller", "Category": "Accessory", "Description": "High-density muscle recovery roller", "Price": 22.00, "StockQuantity": 35, "DateAdded": "2025-02-10", "Brand": "TriggerPoint" },
+    { "Id_Products": 9, "ProductName": "Sweat Towel", "Category": "Apparel", "Description": "Soft absorbent towel", "Price": 10.00, "StockQuantity": 60, "DateAdded": "2025-01-30", "Brand": "Adidas" },
+    { "Id_Products": 10, "ProductName": "Protein Bar", "Category": "Supplement", "Description": "High-protein snack bar", "Price": 3.50, "StockQuantity": 100, "DateAdded": "2025-05-15", "Brand": "Quest" }
+  ],
+  "classes": [
+    { "Id_Classes": 1, "ClassName": "Morning Yoga", "Schedule": "2025-10-10 08:00:00", "Capacity": 15, "DifficultyLevel": "Beginner", "Room": "Room A", "Id_User": 2 },
+    { "Id_Classes": 2, "ClassName": "HIIT Blast", "Schedule": "2025-10-10 10:00:00", "Capacity": 20, "DifficultyLevel": "Advanced", "Room": "Room B", "Id_User": 1 },
+    { "Id_Classes": 3, "ClassName": "Cardio Burn", "Schedule": "2025-10-11 09:00:00", "Capacity": 25, "DifficultyLevel": "Intermediate", "Room": "Room C", "Id_User": 6 },
+    { "Id_Classes": 4, "ClassName": "Pilates Flow", "Schedule": "2025-10-12 07:00:00", "Capacity": 12, "DifficultyLevel": "Beginner", "Room": "Room D", "Id_User": 9 }
+  ],
+  "memberships": [
+    { "Id_Memberships": 1, "StartDate": "2025-01-01", "EndDate": "2025-12-31", "Price": 600.00, "MembershipType": "Annual", "Status": "Active", "PaymentMethod": "Card", "Id_User": 3 },
+    { "Id_Memberships": 2, "StartDate": "2025-05-01", "EndDate": "2025-10-31", "Price": 300.00, "MembershipType": "6-Month", "Status": "Active", "PaymentMethod": "Online", "Id_User": 4 },
+    { "Id_Memberships": 3, "StartDate": "2025-03-15", "EndDate": "2025-09-15", "Price": 350.00, "MembershipType": "6-Month", "Status": "Active", "PaymentMethod": "Card", "Id_User": 7 },
+    { "Id_Memberships": 4, "StartDate": "2025-07-01", "EndDate": "2026-06-30", "Price": 650.00, "MembershipType": "Annual", "Status": "Active", "PaymentMethod": "Cash", "Id_User": 8 }
+  ],
+  "sales": [
+    { "Id_Sales": 1, "Id_Products": 1, "Id_User": 3, "Quantity": 2, "TotalPrice": 50.00, "PaymentMethod": "Card", "SaleDate": "2025-06-12", "BillingAddress": "123 Maple St" },
+    { "Id_Sales": 2, "Id_Products": 2, "Id_User": 3, "Quantity": 1, "TotalPrice": 45.00, "PaymentMethod": "Online", "SaleDate": "2025-07-10", "BillingAddress": "123 Maple St" },
+    { "Id_Sales": 3, "Id_Products": 3, "Id_User": 4, "Quantity": 1, "TotalPrice": 35.00, "PaymentMethod": "Cash", "SaleDate": "2025-08-01", "BillingAddress": "89 Elm St" },
+    { "Id_Sales": 4, "Id_Products": 4, "Id_User": 7, "Quantity": 3, "TotalPrice": 45.00, "PaymentMethod": "Card", "SaleDate": "2025-09-14", "BillingAddress": "77 Oak Ave" },
+    { "Id_Sales": 5, "Id_Products": 5, "Id_User": 8, "Quantity": 1, "TotalPrice": 40.00, "PaymentMethod": "Cash", "SaleDate": "2025-09-28", "BillingAddress": "45 Birch Rd" }
+  ]
+}

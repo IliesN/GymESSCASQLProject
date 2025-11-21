@@ -134,6 +134,9 @@
         <div>
           <h2 class="text-2xl font-semibold mb-2">Members</h2>
           <p class="text-neutral-400 text-sm">Manage gym members and trainers</p>
+          <div class="mt-3">
+            <button @click="openCreateUser" class="px-3 py-2 bg-emerald-600 rounded-md text-sm">+ New Member</button>
+          </div>
         </div>
 
         <div class="bg-neutral-900 border border-neutral-800 rounded-xl overflow-hidden">
@@ -166,6 +169,11 @@
                   </td>
                   <td class="px-6 py-4 whitespace-nowrap text-sm text-neutral-400">{{ user.Speciality || '-' }}</td>
                   <td class="px-6 py-4 whitespace-nowrap text-sm text-neutral-400">{{ formatDate(user.JoinDate) }}</td>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm">
+                    <button @click="viewUser(user)" class="mr-2 text-sm text-emerald-400">View</button>
+                    <button @click="editUser(user)" class="mr-2 text-sm text-amber-400">Edit</button>
+                    <button @click="removeUser(user.Id_User)" class="text-sm text-red-400">Delete</button>
+                  </td>
                 </tr>
               </tbody>
             </table>
@@ -178,9 +186,12 @@
         <div>
           <h2 class="text-2xl font-semibold mb-2">Equipment</h2>
           <p class="text-neutral-400 text-sm">Track and manage gym equipment</p>
+          <div class="mt-3">
+            <button @click="openCreateEquipment" class="px-3 py-2 bg-emerald-600 rounded-md text-sm">+ New Equipment</button>
+          </div>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           <div v-for="item in equipment" :key="item.Id_Equipment" class="bg-neutral-900 border border-neutral-800 rounded-xl p-6 hover:border-neutral-700 transition-colors">
             <div class="flex items-start justify-between mb-3">
               <div>
@@ -209,6 +220,11 @@
               <div class="flex justify-between text-neutral-400">
                 <span>Purchased:</span>
                 <span class="text-neutral-200">{{ formatDate(item.PurchaseDate) }}</span>
+              </div>
+              <div class="flex gap-2 mt-3">
+                <button @click="viewEquipment(item)" class="text-emerald-400 text-sm">View</button>
+                <button @click="editEquipment(item)" class="text-amber-400 text-sm">Edit</button>
+                <button @click="removeEquipment(item.Id_Equipment)" class="text-red-400 text-sm">Delete</button>
               </div>
             </div>
           </div>
@@ -261,9 +277,12 @@
         <div>
           <h2 class="text-2xl font-semibold mb-2">Products</h2>
           <p class="text-neutral-400 text-sm">Manage gym store inventory</p>
+          <div class="mt-3">
+            <button @click="openCreateProduct" class="px-3 py-2 bg-emerald-600 rounded-md text-sm">+ New Product</button>
+          </div>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           <div v-for="product in products" :key="product.Id_Products" class="bg-neutral-900 border border-neutral-800 rounded-xl p-6 hover:border-neutral-700 transition-colors">
             <div class="mb-3">
               <h3 class="font-semibold">{{ product.ProductName }}</h3>
@@ -284,6 +303,11 @@
                 <span :class="product.StockQuantity < 20 ? 'text-amber-400' : 'text-neutral-200'">
                   {{ product.StockQuantity }} units
                 </span>
+              </div>
+              <div class="flex gap-2 mt-3">
+                <button @click="viewProduct(product)" class="text-emerald-400 text-sm">View</button>
+                <button @click="editProduct(product)" class="text-amber-400 text-sm">Edit</button>
+                <button @click="removeProduct(product.Id_Products)" class="text-red-400 text-sm">Delete</button>
               </div>
             </div>
           </div>
@@ -340,6 +364,97 @@
         </p>
       </div>
     </footer>
+
+    <!-- Modals / Forms for CRUD -->
+    <!-- User Form / Details -->
+    <div v-if="showUserForm || showUserDetails" class="fixed inset-0 flex items-center justify-center z-50">
+      <div class="absolute inset-0 bg-black/60" @click="closeUserModals"></div>
+      <div class="bg-neutral-900 border border-neutral-800 rounded-lg p-6 w-full max-w-2xl z-10">
+        <div v-if="showUserDetails">
+          <h3 class="text-lg font-semibold mb-3">Member Details</h3>
+          <pre class="text-sm text-neutral-300 bg-neutral-800 p-3 rounded">{{ selectedUser }}</pre>
+          <div class="mt-4 flex justify-end"><button @click="closeUserModals" class="px-3 py-2 bg-emerald-600 rounded">Close</button></div>
+        </div>
+        <div v-if="showUserForm">
+          <h3 class="text-lg font-semibold mb-3">{{ editingUser ? 'Edit Member' : 'New Member' }}</h3>
+          <div class="grid grid-cols-1 gap-3">
+            <input v-model="userForm.Name" placeholder="Name" class="p-2 bg-neutral-800 rounded" />
+            <input v-model="userForm.Email" placeholder="Email" class="p-2 bg-neutral-800 rounded" />
+            <input v-model="userForm.Phone" placeholder="Phone" class="p-2 bg-neutral-800 rounded" />
+            <input v-model="userForm.DoB" type="date" placeholder="DoB" class="p-2 bg-neutral-800 rounded" />
+            <select v-model="userForm.Role" class="p-2 bg-neutral-800 rounded">
+              <option>Customer</option>
+              <option>Trainer</option>
+              <option>Staff</option>
+            </select>
+            <input v-model="userForm.Speciality" placeholder="Speciality" class="p-2 bg-neutral-800 rounded" />
+          </div>
+          <div class="mt-4 flex gap-2 justify-end">
+            <button @click="saveUser" class="px-3 py-2 bg-emerald-600 rounded">Save</button>
+            <button @click="closeUserModals" class="px-3 py-2 bg-neutral-700 rounded">Cancel</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Equipment Form / Details -->
+    <div v-if="showEquipmentForm || showEquipmentDetails" class="fixed inset-0 flex items-center justify-center z-50">
+      <div class="absolute inset-0 bg-black/60" @click="closeEquipmentModals"></div>
+      <div class="bg-neutral-900 border border-neutral-800 rounded-lg p-6 w-full max-w-2xl z-10">
+        <div v-if="showEquipmentDetails">
+          <h3 class="text-lg font-semibold mb-3">Equipment Details</h3>
+          <pre class="text-sm text-neutral-300 bg-neutral-800 p-3 rounded">{{ selectedEquipment }}</pre>
+          <div class="mt-4 flex justify-end"><button @click="closeEquipmentModals" class="px-3 py-2 bg-emerald-600 rounded">Close</button></div>
+        </div>
+        <div v-if="showEquipmentForm">
+          <h3 class="text-lg font-semibold mb-3">{{ editingEquipment ? 'Edit Equipment' : 'New Equipment' }}</h3>
+          <div class="grid grid-cols-1 gap-3">
+            <input v-model="equipmentForm.Name" placeholder="Name" class="p-2 bg-neutral-800 rounded" />
+            <input v-model="equipmentForm.Brand" placeholder="Brand" class="p-2 bg-neutral-800 rounded" />
+            <input v-model="equipmentForm.Type" placeholder="Type" class="p-2 bg-neutral-800 rounded" />
+            <input v-model.number="equipmentForm.Price" placeholder="Price" class="p-2 bg-neutral-800 rounded" />
+            <input v-model="equipmentForm.PurchaseDate" type="date" class="p-2 bg-neutral-800 rounded" />
+            <select v-model="equipmentForm.Condition_" class="p-2 bg-neutral-800 rounded">
+              <option>Excellent</option>
+              <option>Good</option>
+              <option>Fair</option>
+              <option>Poor</option>
+            </select>
+          </div>
+          <div class="mt-4 flex gap-2 justify-end">
+            <button @click="saveEquipment" class="px-3 py-2 bg-emerald-600 rounded">Save</button>
+            <button @click="closeEquipmentModals" class="px-3 py-2 bg-neutral-700 rounded">Cancel</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Product Form / Details -->
+    <div v-if="showProductForm || showProductDetails" class="fixed inset-0 flex items-center justify-center z-50">
+      <div class="absolute inset-0 bg-black/60" @click="closeProductModals"></div>
+      <div class="bg-neutral-900 border border-neutral-800 rounded-lg p-6 w-full max-w-2xl z-10">
+        <div v-if="showProductDetails">
+          <h3 class="text-lg font-semibold mb-3">Product Details</h3>
+          <pre class="text-sm text-neutral-300 bg-neutral-800 p-3 rounded">{{ selectedProduct }}</pre>
+          <div class="mt-4 flex justify-end"><button @click="closeProductModals" class="px-3 py-2 bg-emerald-600 rounded">Close</button></div>
+        </div>
+        <div v-if="showProductForm">
+          <h3 class="text-lg font-semibold mb-3">{{ editingProduct ? 'Edit Product' : 'New Product' }}</h3>
+          <div class="grid grid-cols-1 gap-3">
+            <input v-model="productForm.ProductName" placeholder="Product Name" class="p-2 bg-neutral-800 rounded" />
+            <input v-model="productForm.Brand" placeholder="Brand" class="p-2 bg-neutral-800 rounded" />
+            <input v-model="productForm.Category" placeholder="Category" class="p-2 bg-neutral-800 rounded" />
+            <input v-model.number="productForm.Price" placeholder="Price" class="p-2 bg-neutral-800 rounded" />
+            <input v-model.number="productForm.StockQuantity" placeholder="Stock" class="p-2 bg-neutral-800 rounded" />
+            <textarea v-model="productForm.Description" placeholder="Description" class="p-2 bg-neutral-800 rounded"></textarea>
+          </div>
+          <div class="mt-4 flex gap-2 justify-end">
+            <button @click="saveProduct" class="px-3 py-2 bg-emerald-600 rounded">Save</button>
+            <button @click="closeProductModals" class="px-3 py-2 bg-neutral-700 rounded">Cancel</button>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -348,13 +463,30 @@ import { ref, computed } from 'vue'
 import { Users, User, Dumbbell, Calendar, DollarSign } from 'lucide-vue-next'
 import data from '../data/fake.json'
 
-// Create reactive refs from imported JSON data
-const users = ref(data.users)
-const equipment = ref(data.equipment)
-const products = ref(data.products)
+// Helper: load from localStorage or fallback to fake.json
+const loadOrDefault = (key, fallback) => {
+  try {
+    const raw = localStorage.getItem(key)
+    if (raw) return JSON.parse(raw)
+  } catch (e) {
+    // ignore
+  }
+  return JSON.parse(JSON.stringify(fallback))
+}
+
+// Reactive state for data (persisted to localStorage)
+const users = ref(loadOrDefault('gym_users', data.users))
+const equipment = ref(loadOrDefault('gym_equipment', data.equipment))
+const products = ref(loadOrDefault('gym_products', data.products))
 const classes = ref(data.classes)
 const memberships = ref(data.memberships)
 const sales = ref(data.sales)
+
+const persist = () => {
+  localStorage.setItem('gym_users', JSON.stringify(users.value))
+  localStorage.setItem('gym_equipment', JSON.stringify(equipment.value))
+  localStorage.setItem('gym_products', JSON.stringify(products.value))
+}
 
 const activeTab = ref('dashboard')
 
@@ -390,12 +522,12 @@ const formatDate = (dateString) => {
 }
 
 const formatDateTime = (dateString) => {
-  return new Date(dateString).toLocaleString('en-US', { 
-    month: 'short', 
-    day: 'numeric', 
-    hour: 'numeric', 
+  return new Date(dateString).toLocaleString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    hour: 'numeric',
     minute: '2-digit',
-    hour12: true 
+    hour12: true
   })
 }
 
@@ -411,6 +543,156 @@ const logout = () => {
   localStorage.removeItem('isAdmin')
   const ev = new CustomEvent('logout')
   window.dispatchEvent(ev)
+}
+
+// ------------------ CRUD state & helpers for Users ------------------
+const showUserForm = ref(false)
+const showUserDetails = ref(false)
+const selectedUser = ref(null)
+const editingUser = ref(false)
+const userForm = ref({})
+
+const openCreateUser = () => {
+  editingUser.value = false
+  userForm.value = { Name: '', Email: '', Phone: '', DoB: '', JoinDate: new Date().toISOString().slice(0,10), Role: 'Customer', Speciality: '', Salary: 0 }
+  showUserForm.value = true
+}
+
+const editUser = (u) => {
+  editingUser.value = true
+  userForm.value = JSON.parse(JSON.stringify(u))
+  showUserForm.value = true
+}
+
+const viewUser = (u) => {
+  selectedUser.value = JSON.parse(JSON.stringify(u))
+  showUserDetails.value = true
+}
+
+const closeUserModals = () => {
+  showUserForm.value = false
+  showUserDetails.value = false
+  selectedUser.value = null
+}
+
+const removeUser = (id) => {
+  if (!confirm('Delete this member?')) return
+  users.value = users.value.filter(u => u.Id_User !== id)
+  persist()
+}
+
+const saveUser = () => {
+  if (editingUser.value) {
+    const idx = users.value.findIndex(u => u.Id_User === userForm.value.Id_User)
+    if (idx !== -1) users.value[idx] = JSON.parse(JSON.stringify(userForm.value))
+  } else {
+    const maxId = users.value.reduce((m, u) => Math.max(m, u.Id_User || 0), 0)
+    const newUser = JSON.parse(JSON.stringify(userForm.value))
+    newUser.Id_User = maxId + 1
+    users.value.push(newUser)
+  }
+  persist()
+  closeUserModals()
+}
+
+// ------------------ CRUD state & helpers for Equipment ------------------
+const showEquipmentForm = ref(false)
+const showEquipmentDetails = ref(false)
+const selectedEquipment = ref(null)
+const editingEquipment = ref(false)
+const equipmentForm = ref({})
+
+const openCreateEquipment = () => {
+  editingEquipment.value = false
+  equipmentForm.value = { Name: '', Type: '', PurchaseDate: new Date().toISOString().slice(0,10), MaintenanceDate: '', Price: 0, Brand: '', Condition_: 'Good' }
+  showEquipmentForm.value = true
+}
+
+const editEquipment = (e) => {
+  editingEquipment.value = true
+  equipmentForm.value = JSON.parse(JSON.stringify(e))
+  showEquipmentForm.value = true
+}
+
+const viewEquipment = (e) => {
+  selectedEquipment.value = JSON.parse(JSON.stringify(e))
+  showEquipmentDetails.value = true
+}
+
+const closeEquipmentModals = () => {
+  showEquipmentForm.value = false
+  showEquipmentDetails.value = false
+  selectedEquipment.value = null
+}
+
+const removeEquipment = (id) => {
+  if (!confirm('Delete this equipment item?')) return
+  equipment.value = equipment.value.filter(e => e.Id_Equipment !== id)
+  persist()
+}
+
+const saveEquipment = () => {
+  if (editingEquipment.value) {
+    const idx = equipment.value.findIndex(e => e.Id_Equipment === equipmentForm.value.Id_Equipment)
+    if (idx !== -1) equipment.value[idx] = JSON.parse(JSON.stringify(equipmentForm.value))
+  } else {
+    const maxId = equipment.value.reduce((m, e) => Math.max(m, e.Id_Equipment || 0), 0)
+    const newItem = JSON.parse(JSON.stringify(equipmentForm.value))
+    newItem.Id_Equipment = maxId + 1
+    equipment.value.push(newItem)
+  }
+  persist()
+  closeEquipmentModals()
+}
+
+// ------------------ CRUD state & helpers for Products ------------------
+const showProductForm = ref(false)
+const showProductDetails = ref(false)
+const selectedProduct = ref(null)
+const editingProduct = ref(false)
+const productForm = ref({})
+
+const openCreateProduct = () => {
+  editingProduct.value = false
+  productForm.value = { ProductName: '', Category: '', Description: '', Price: 0, StockQuantity: 0, DateAdded: new Date().toISOString().slice(0,10), Brand: '' }
+  showProductForm.value = true
+}
+
+const editProduct = (p) => {
+  editingProduct.value = true
+  productForm.value = JSON.parse(JSON.stringify(p))
+  showProductForm.value = true
+}
+
+const viewProduct = (p) => {
+  selectedProduct.value = JSON.parse(JSON.stringify(p))
+  showProductDetails.value = true
+}
+
+const closeProductModals = () => {
+  showProductForm.value = false
+  showProductDetails.value = false
+  selectedProduct.value = null
+}
+
+const removeProduct = (id) => {
+  if (!confirm('Delete this product?')) return
+  products.value = products.value.filter(p => p.Id_Products !== id)
+  persist()
+}
+
+const saveProduct = () => {
+  if (editingProduct.value) {
+    const idx = products.value.findIndex(p => p.Id_Products === productForm.value.Id_Products)
+    if (idx !== -1) products.value[idx] = JSON.parse(JSON.stringify(productForm.value))
+  } else {
+    const maxId = products.value.reduce((m, p) => Math.max(m, p.Id_Products || 0), 0)
+    const newItem = JSON.parse(JSON.stringify(productForm.value))
+    newItem.Id_Products = maxId + 1
+    products.value.push(newItem)
+  }
+  persist()
+  closeProductModals()
 }
 </script>
 

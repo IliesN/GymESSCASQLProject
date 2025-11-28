@@ -1,8 +1,9 @@
-// Express backend skeleton with simple in-memory CRUD routes
+// Express backend with MySQL CRUD routes
 const express = require('express')
 const cors = require('cors')
-const path = require('path')
-const fs = require('fs')
+const mysql = require('mysql2/promise')
+// const path = require('path')
+// const fs = require('fs')
 
 const app = express()
 const port = process.env.PORT || 3000
@@ -10,6 +11,20 @@ const port = process.env.PORT || 3000
 app.use(cors())
 app.use(express.json())
 
+// MySQL connection pool
+const pool = mysql.createPool({
+  host: process.env.MYSQL_HOST || 'localhost',
+  user: process.env.MYSQL_USER || 'root',
+  password: process.env.MYSQL_PASSWORD || 'root',
+  database: process.env.MYSQL_DATABASE || 'gym_db',
+  port: process.env.MYSQL_PORT || 3306,
+  waitForConnections: true,
+  connectionLimit: 10,
+  queueLimit: 0
+})
+
+// Old in-memory code (commented out)
+/*
 // Try to load frontend fake data if available (optional)
 let users = []
 let equipment = []
@@ -26,97 +41,261 @@ try {
 } catch (e) {
   // ignore loading errors; start with empty arrays
 }
+*/
 
-app.get('/', (req, res) => res.json({ status: 'backend-express-skeleton', port }))
+app.get('/', (req, res) => res.json({ status: 'backend-express-mysql', port }))
 app.get('/api/health', (req, res) => res.json({ ok: true }))
 
 // Generic helpers
 const parseId = (s) => parseInt(s, 10) || 0
 
-// USERS
-app.get('/api/users', (req, res) => res.json(users))
-app.get('/api/users/:id', (req, res) => {
-  const id = parseId(req.params.id)
-  const u = users.find(x => x.Id_User === id)
-  if (!u) return res.status(404).json({ error: 'Not found' })
-  res.json(u)
-})
-app.post('/api/users', (req, res) => {
-  const payload = req.body || {}
-  const maxId = users.reduce((m, x) => Math.max(m, x.Id_User || 0), 0)
-  const newUser = { ...payload, Id_User: maxId + 1 }
-  users.push(newUser)
-  res.status(201).json(newUser)
-})
-app.put('/api/users/:id', (req, res) => {
-  const id = parseId(req.params.id)
-  const idx = users.findIndex(x => x.Id_User === id)
-  if (idx === -1) return res.status(404).json({ error: 'Not found' })
-  users[idx] = { ...users[idx], ...req.body }
-  res.json(users[idx])
-})
-app.delete('/api/users/:id', (req, res) => {
-  const id = parseId(req.params.id)
-  users = users.filter(x => x.Id_User !== id)
-  res.status(204).end()
+// ==================== USERS ====================
+// GET /api/users - list all users
+app.get('/api/users', async (req, res) => {
+  try {
+    const conn = await pool.getConnection()
+    const [rows] = await conn.query('SELECT * FROM users')
+    conn.release()
+    res.json(rows)
+  } catch (err) {
+    console.error('GET /api/users error:', err)
+    res.status(500).json({ error: err.message })
+  }
 })
 
-// EQUIPMENT
-app.get('/api/equipment', (req, res) => res.json(equipment))
-app.get('/api/equipment/:id', (req, res) => {
-  const id = parseId(req.params.id)
-  const e = equipment.find(x => x.Id_Equipment === id)
-  if (!e) return res.status(404).json({ error: 'Not found' })
-  res.json(e)
-})
-app.post('/api/equipment', (req, res) => {
-  const payload = req.body || {}
-  const maxId = equipment.reduce((m, x) => Math.max(m, x.Id_Equipment || 0), 0)
-  const newItem = { ...payload, Id_Equipment: maxId + 1 }
-  equipment.push(newItem)
-  res.status(201).json(newItem)
-})
-app.put('/api/equipment/:id', (req, res) => {
-  const id = parseId(req.params.id)
-  const idx = equipment.findIndex(x => x.Id_Equipment === id)
-  if (idx === -1) return res.status(404).json({ error: 'Not found' })
-  equipment[idx] = { ...equipment[idx], ...req.body }
-  res.json(equipment[idx])
-})
-app.delete('/api/equipment/:id', (req, res) => {
-  const id = parseId(req.params.id)
-  equipment = equipment.filter(x => x.Id_Equipment !== id)
-  res.status(204).end()
+// GET /api/users/:id - get user by id
+app.get('/api/users/:id', async (req, res) => {
+  try {
+    const id = parseId(req.params.id)
+    const conn = await pool.getConnection()
+    const [rows] = await conn.query('SELECT * FROM users WHERE Id_User = ?', [id])
+    conn.release()
+    if (rows.length === 0) return res.status(404).json({ error: 'Not found' })
+    res.json(rows[0])
+  } catch (err) {
+    console.error('GET /api/users/:id error:', err)
+    res.status(500).json({ error: err.message })
+  }
 })
 
-// PRODUCTS
-app.get('/api/products', (req, res) => res.json(products))
-app.get('/api/products/:id', (req, res) => {
-  const id = parseId(req.params.id)
-  const p = products.find(x => x.Id_Products === id)
-  if (!p) return res.status(404).json({ error: 'Not found' })
-  res.json(p)
+// POST /api/users - create user
+app.post('/api/users', async (req, res) => {
+  try {
+    const { Name, Email, Phone, DoB, JoinDate, Role, Speciality, Salary } = req.body
+    const conn = await pool.getConnection()
+    const query = 'INSERT INTO users (Name, Email, Phone, DoB, JoinDate, Role, Speciality, Salary) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
+    const [result] = await conn.query(query, [Name, Email, Phone, DoB, JoinDate, Role, Speciality, Salary || 0])
+    conn.release()
+    res.status(201).json({ Id_User: result.insertId, Name, Email, Phone, DoB, JoinDate, Role, Speciality, Salary })
+  } catch (err) {
+    console.error('POST /api/users error:', err)
+    res.status(500).json({ error: err.message })
+  }
 })
-app.post('/api/products', (req, res) => {
-  const payload = req.body || {}
-  const maxId = products.reduce((m, x) => Math.max(m, x.Id_Products || 0), 0)
-  const newItem = { ...payload, Id_Products: maxId + 1 }
-  products.push(newItem)
-  res.status(201).json(newItem)
+
+// PUT /api/users/:id - update user
+app.put('/api/users/:id', async (req, res) => {
+  try {
+    const id = parseId(req.params.id)
+    const { Name, Email, Phone, DoB, JoinDate, Role, Speciality, Salary } = req.body
+    const conn = await pool.getConnection()
+    
+    // Fetch existing to merge
+    const [existing] = await conn.query('SELECT * FROM users WHERE Id_User = ?', [id])
+    if (existing.length === 0) {
+      conn.release()
+      return res.status(404).json({ error: 'Not found' })
+    }
+    
+    const merged = { ...existing[0], Name, Email, Phone, DoB, JoinDate, Role, Speciality, Salary }
+    const query = 'UPDATE users SET Name=?, Email=?, Phone=?, DoB=?, JoinDate=?, Role=?, Speciality=?, Salary=? WHERE Id_User=?'
+    await conn.query(query, [merged.Name, merged.Email, merged.Phone, merged.DoB, merged.JoinDate, merged.Role, merged.Speciality, merged.Salary, id])
+    conn.release()
+    res.json(merged)
+  } catch (err) {
+    console.error('PUT /api/users/:id error:', err)
+    res.status(500).json({ error: err.message })
+  }
 })
-app.put('/api/products/:id', (req, res) => {
-  const id = parseId(req.params.id)
-  const idx = products.findIndex(x => x.Id_Products === id)
-  if (idx === -1) return res.status(404).json({ error: 'Not found' })
-  products[idx] = { ...products[idx], ...req.body }
-  res.json(products[idx])
+
+// DELETE /api/users/:id - delete user
+app.delete('/api/users/:id', async (req, res) => {
+  try {
+    const id = parseId(req.params.id)
+    const conn = await pool.getConnection()
+    await conn.query('DELETE FROM users WHERE Id_User = ?', [id])
+    conn.release()
+    res.status(204).end()
+  } catch (err) {
+    console.error('DELETE /api/users/:id error:', err)
+    res.status(500).json({ error: err.message })
+  }
 })
-app.delete('/api/products/:id', (req, res) => {
-  const id = parseId(req.params.id)
-  products = products.filter(x => x.Id_Products !== id)
-  res.status(204).end()
+
+// ==================== EQUIPMENT ====================
+// GET /api/equipment - list all equipment
+app.get('/api/equipment', async (req, res) => {
+  try {
+    const conn = await pool.getConnection()
+    const [rows] = await conn.query('SELECT * FROM equipment')
+    conn.release()
+    res.json(rows)
+  } catch (err) {
+    console.error('GET /api/equipment error:', err)
+    res.status(500).json({ error: err.message })
+  }
+})
+
+// GET /api/equipment/:id - get equipment by id
+app.get('/api/equipment/:id', async (req, res) => {
+  try {
+    const id = parseId(req.params.id)
+    const conn = await pool.getConnection()
+    const [rows] = await conn.query('SELECT * FROM equipment WHERE Id_Equipment = ?', [id])
+    conn.release()
+    if (rows.length === 0) return res.status(404).json({ error: 'Not found' })
+    res.json(rows[0])
+  } catch (err) {
+    console.error('GET /api/equipment/:id error:', err)
+    res.status(500).json({ error: err.message })
+  }
+})
+
+// POST /api/equipment - create equipment
+app.post('/api/equipment', async (req, res) => {
+  try {
+    const { Name, Type, PurchaseDate, MaintenanceDate, Price, Brand, Condition_ } = req.body
+    const conn = await pool.getConnection()
+    const query = 'INSERT INTO equipment (Name, Type, PurchaseDate, MaintenanceDate, Price, Brand, Condition_) VALUES (?, ?, ?, ?, ?, ?, ?)'
+    const [result] = await conn.query(query, [Name, Type, PurchaseDate, MaintenanceDate, Price, Brand, Condition_])
+    conn.release()
+    res.status(201).json({ Id_Equipment: result.insertId, Name, Type, PurchaseDate, MaintenanceDate, Price, Brand, Condition_ })
+  } catch (err) {
+    console.error('POST /api/equipment error:', err)
+    res.status(500).json({ error: err.message })
+  }
+})
+
+// PUT /api/equipment/:id - update equipment
+app.put('/api/equipment/:id', async (req, res) => {
+  try {
+    const id = parseId(req.params.id)
+    const { Name, Type, PurchaseDate, MaintenanceDate, Price, Brand, Condition_ } = req.body
+    const conn = await pool.getConnection()
+    
+    const [existing] = await conn.query('SELECT * FROM equipment WHERE Id_Equipment = ?', [id])
+    if (existing.length === 0) {
+      conn.release()
+      return res.status(404).json({ error: 'Not found' })
+    }
+    
+    const merged = { ...existing[0], Name, Type, PurchaseDate, MaintenanceDate, Price, Brand, Condition_ }
+    const query = 'UPDATE equipment SET Name=?, Type=?, PurchaseDate=?, MaintenanceDate=?, Price=?, Brand=?, Condition_=? WHERE Id_Equipment=?'
+    await conn.query(query, [merged.Name, merged.Type, merged.PurchaseDate, merged.MaintenanceDate, merged.Price, merged.Brand, merged.Condition_, id])
+    conn.release()
+    res.json(merged)
+  } catch (err) {
+    console.error('PUT /api/equipment/:id error:', err)
+    res.status(500).json({ error: err.message })
+  }
+})
+
+// DELETE /api/equipment/:id - delete equipment
+app.delete('/api/equipment/:id', async (req, res) => {
+  try {
+    const id = parseId(req.params.id)
+    const conn = await pool.getConnection()
+    await conn.query('DELETE FROM equipment WHERE Id_Equipment = ?', [id])
+    conn.release()
+    res.status(204).end()
+  } catch (err) {
+    console.error('DELETE /api/equipment/:id error:', err)
+    res.status(500).json({ error: err.message })
+  }
+})
+
+// ==================== PRODUCTS ====================
+// GET /api/products - list all products
+app.get('/api/products', async (req, res) => {
+  try {
+    const conn = await pool.getConnection()
+    const [rows] = await conn.query('SELECT * FROM products')
+    conn.release()
+    res.json(rows)
+  } catch (err) {
+    console.error('GET /api/products error:', err)
+    res.status(500).json({ error: err.message })
+  }
+})
+
+// GET /api/products/:id - get product by id
+app.get('/api/products/:id', async (req, res) => {
+  try {
+    const id = parseId(req.params.id)
+    const conn = await pool.getConnection()
+    const [rows] = await conn.query('SELECT * FROM products WHERE Id_Products = ?', [id])
+    conn.release()
+    if (rows.length === 0) return res.status(404).json({ error: 'Not found' })
+    res.json(rows[0])
+  } catch (err) {
+    console.error('GET /api/products/:id error:', err)
+    res.status(500).json({ error: err.message })
+  }
+})
+
+// POST /api/products - create product
+app.post('/api/products', async (req, res) => {
+  try {
+    const { ProductName, Category, Description, Price, StockQuantity, DateAdded, Brand } = req.body
+    const conn = await pool.getConnection()
+    const query = 'INSERT INTO products (ProductName, Category, Description, Price, StockQuantity, DateAdded, Brand) VALUES (?, ?, ?, ?, ?, ?, ?)'
+    const [result] = await conn.query(query, [ProductName, Category, Description, Price, StockQuantity, DateAdded, Brand])
+    conn.release()
+    res.status(201).json({ Id_Products: result.insertId, ProductName, Category, Description, Price, StockQuantity, DateAdded, Brand })
+  } catch (err) {
+    console.error('POST /api/products error:', err)
+    res.status(500).json({ error: err.message })
+  }
+})
+
+// PUT /api/products/:id - update product
+app.put('/api/products/:id', async (req, res) => {
+  try {
+    const id = parseId(req.params.id)
+    const { ProductName, Category, Description, Price, StockQuantity, DateAdded, Brand } = req.body
+    const conn = await pool.getConnection()
+    
+    const [existing] = await conn.query('SELECT * FROM products WHERE Id_Products = ?', [id])
+    if (existing.length === 0) {
+      conn.release()
+      return res.status(404).json({ error: 'Not found' })
+    }
+    
+    const merged = { ...existing[0], ProductName, Category, Description, Price, StockQuantity, DateAdded, Brand }
+    const query = 'UPDATE products SET ProductName=?, Category=?, Description=?, Price=?, StockQuantity=?, DateAdded=?, Brand=? WHERE Id_Products=?'
+    await conn.query(query, [merged.ProductName, merged.Category, merged.Description, merged.Price, merged.StockQuantity, merged.DateAdded, merged.Brand, id])
+    conn.release()
+    res.json(merged)
+  } catch (err) {
+    console.error('PUT /api/products/:id error:', err)
+    res.status(500).json({ error: err.message })
+  }
+})
+
+// DELETE /api/products/:id - delete product
+app.delete('/api/products/:id', async (req, res) => {
+  try {
+    const id = parseId(req.params.id)
+    const conn = await pool.getConnection()
+    await conn.query('DELETE FROM products WHERE Id_Products = ?', [id])
+    conn.release()
+    res.status(204).end()
+  } catch (err) {
+    console.error('DELETE /api/products/:id error:', err)
+    res.status(500).json({ error: err.message })
+  }
 })
 
 app.listen(port, () => {
-  console.log(`Express backend skeleton listening on port ${port}`)
+  console.log(`Express backend (MySQL) listening on port ${port}`)
 })

@@ -1,13 +1,14 @@
 {
   "name": "gym-backend",
-  "version": "0.1.0",
-  "description": "Express backend skeleton for Gym project (development only)",
+  "version": "0.2.0",
+  "description": "Express backend with MySQL for Gym project",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
   },
   "dependencies": {
     "cors": "^2.8.5",
-    "express": "^4.18.2"
+    "express": "^4.18.2",
+    "mysql2": "^3.6.0"
   }
 }

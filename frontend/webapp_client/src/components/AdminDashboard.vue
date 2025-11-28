@@ -459,34 +459,17 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
+import axios from 'axios'
 import { Users, User, Dumbbell, Calendar, DollarSign } from 'lucide-vue-next'
-import data from '../data/fake.json'
 
-// Helper: load from localStorage or fallback to fake.json
-const loadOrDefault = (key, fallback) => {
-  try {
-    const raw = localStorage.getItem(key)
-    if (raw) return JSON.parse(raw)
-  } catch (e) {
-    // ignore
-  }
-  return JSON.parse(JSON.stringify(fallback))
-}
-
-// Reactive state for data (persisted to localStorage)
-const users = ref(loadOrDefault('gym_users', data.users))
-const equipment = ref(loadOrDefault('gym_equipment', data.equipment))
-const products = ref(loadOrDefault('gym_products', data.products))
-const classes = ref(data.classes)
-const memberships = ref(data.memberships)
-const sales = ref(data.sales)
-
-const persist = () => {
-  localStorage.setItem('gym_users', JSON.stringify(users.value))
-  localStorage.setItem('gym_equipment', JSON.stringify(equipment.value))
-  localStorage.setItem('gym_products', JSON.stringify(products.value))
-}
+// Reactive state for data
+const users = ref([])
+const equipment = ref([])
+const products = ref([])
+const classes = ref([])
+const memberships = ref([])
+const sales = ref([])
 
 const activeTab = ref('dashboard')
 
@@ -544,6 +527,26 @@ const logout = () => {
   const ev = new CustomEvent('logout')
   window.dispatchEvent(ev)
 }
+
+// Fetch data from the server
+const fetchData = async () => {
+  try {
+    const [usersRes, equipmentRes, productsRes] = await Promise.all([
+      axios.get('/api/users'),
+      axios.get('/api/equipment'),
+      axios.get('/api/products')
+    ])
+    users.value = usersRes.data
+    equipment.value = equipmentRes.data
+    products.value = productsRes.data
+  } catch (error) {
+    console.error('Error fetching data:', error)
+  }
+}
+
+onMounted(() => {
+  fetchData()
+})
 
 // ------------------ CRUD state & helpers for Users ------------------
 const showUserForm = ref(false)

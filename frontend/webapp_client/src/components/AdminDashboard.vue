@@ -225,6 +225,7 @@
                 <button @click="viewEquipment(item)" class="text-emerald-400 text-sm">View</button>
                 <button @click="editEquipment(item)" class="text-amber-400 text-sm">Edit</button>
                 <button @click="removeEquipment(item.Id_Equipment)" class="text-red-400 text-sm">Delete</button>
+                <button @click="openReservationModal(item)" class="text-blue-400 text-sm">Reserve</button>
               </div>
             </div>
           </div>
@@ -354,6 +355,51 @@
           </div>
         </div>
       </div>
+
+      <!-- Reservations -->
+      <div v-if="activeTab === 'reservations'" class="space-y-6">
+        <div>
+          <h2 class="text-2xl font-semibold mb-2">Reservations</h2>
+          <p class="text-neutral-400 text-sm">Manage equipment reservations</p>
+          <div class="mt-3">
+            <button @click="openCreateReservation" class="px-3 py-2 bg-emerald-600 rounded-md text-sm">+ New Reservation</button>
+          </div>
+        </div>
+
+        <div class="bg-neutral-900 border border-neutral-800 rounded-xl overflow-hidden">
+          <div class="overflow-x-auto">
+            <table class="w-full">
+              <thead class="bg-neutral-800/50 border-b border-neutral-800">
+                <tr>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-neutral-400 uppercase tracking-wider">Equipment</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-neutral-400 uppercase tracking-wider">User</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-neutral-400 uppercase tracking-wider">Start Date</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-neutral-400 uppercase tracking-wider">End Date</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-neutral-400 uppercase tracking-wider">Status</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-neutral-800">
+                <tr v-for="reservation in reservations" :key="reservation.Id" class="hover:bg-neutral-800/30 transition-colors">
+                  <td class="px-6 py-4 whitespace-nowrap">{{ getEquipmentName(reservation.EquipmentId) }}</td>
+                  <td class="px-6 py-4 whitespace-nowrap">{{ getUserName(reservation.UserId) }}</td>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm text-neutral-400">{{ formatDateTime(reservation.StartDate) }}</td>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm text-neutral-400">{{ formatDateTime(reservation.EndDate) }}</td>
+                  <td class="px-6 py-4 whitespace-nowrap">
+                    <span :class="[
+                      'px-2 py-1 text-xs font-medium rounded-full',
+                      reservation.Status === 'Approved' ? 'bg-emerald-500/10 text-emerald-400' :
+                      reservation.Status === 'Pending' ? 'bg-amber-500/10 text-amber-400' :
+                      'bg-red-500/10 text-red-400'
+                    ]">
+                      {{ reservation.Status }}
+                    </span>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
     </main>
 
     <!-- Footer -->
@@ -455,11 +501,28 @@
         </div>
       </div>
     </div>
+
+    <!-- Reservation Modal -->
+    <div v-if="showReservationModal" class="fixed inset-0 flex items-center justify-center z-50">
+      <div class="absolute inset-0 bg-black/60" @click="closeReservationModal"></div>
+      <div class="bg-neutral-900 border border-neutral-800 rounded-lg p-6 w-full max-w-2xl z-10">
+        <h3 class="text-lg font-semibold mb-3">Reserve Equipment</h3>
+        <div class="grid grid-cols-1 gap-3">
+          <p class="text-sm text-neutral-400">Reserving: {{ selectedEquipment.Name }}</p>
+          <input v-model="reservationForm.StartDate" type="datetime-local" placeholder="Start Date" class="p-2 bg-neutral-800 rounded" />
+          <input v-model="reservationForm.EndDate" type="datetime-local" placeholder="End Date" class="p-2 bg-neutral-800 rounded" />
+        </div>
+        <div class="mt-4 flex gap-2 justify-end">
+          <button @click="submitReservation" class="px-3 py-2 bg-emerald-600 rounded">Reserve</button>
+          <button @click="closeReservationModal" class="px-3 py-2 bg-neutral-700 rounded">Cancel</button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { Users, User, Dumbbell, Calendar, DollarSign } from 'lucide-vue-next'
 import data from '../data/fake.json'
 
@@ -496,7 +559,8 @@ const tabs = [
   { id: 'equipment', label: 'Equipment' },
   { id: 'classes', label: 'Classes' },
   { id: 'products', label: 'Products' },
-  { id: 'memberships', label: 'Memberships' }
+  { id: 'memberships', label: 'Memberships' },
+  { id: 'reservations', label: 'Reservations' }
 ]
 
 const stats = computed(() => ({
@@ -694,6 +758,73 @@ const saveProduct = () => {
   persist()
   closeProductModals()
 }
+
+// ------------------ CRUD state & helpers for Reservations ------------------
+const reservations = ref([]);
+
+const fetchReservations = async () => {
+  const response = await fetch('/api/reservations');
+  reservations.value = await response.json();
+};
+
+const openCreateReservation = () => {
+  // Logic to open a modal for creating a reservation
+};
+
+const getEquipmentName = (id) => {
+  const equipment = equipment.value.find(e => e.Id_Equipment === id);
+  return equipment ? equipment.Name : 'Unknown';
+};
+
+const showReservationModal = ref(false);
+const reservationForm = ref({ StartDate: '', EndDate: '' });
+
+const openReservationModal = (equipment) => {
+  selectedEquipment.value = equipment;
+  reservationForm.value = { StartDate: '', EndDate: '' };
+  showReservationModal.value = true;
+};
+
+const closeReservationModal = () => {
+  showReservationModal.value = false;
+  selectedEquipment.value = null;
+};
+
+// Define the API base URL
+const API_BASE_URL = 'http://localhost:3000'; // Update this to match your backend server URL
+
+const submitReservation = async () => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/reservations`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        EquipmentId: selectedEquipment.value.Id_Equipment,
+        UserId: 1, // Replace with actual user ID from authentication
+        StartDate: reservationForm.value.StartDate,
+        EndDate: reservationForm.value.EndDate
+      })
+    });
+
+    if (!response.ok) {
+      const error = await response.text();
+      console.error('Error:', error);
+      alert(`Error: ${error}`);
+      return;
+    }
+
+    const data = await response.json();
+    alert('Reservation successful!');
+    closeReservationModal();
+  } catch (error) {
+    console.error('Failed to submit reservation:', error);
+    alert('An error occurred while submitting the reservation.');
+  }
+};
+
+onMounted(() => {
+  fetchReservations();
+});
 </script>
 
 <style scoped>

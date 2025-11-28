@@ -10,6 +10,11 @@ const port = process.env.PORT || 3000
 app.use(cors())
 app.use(express.json())
 
+// Ensure API routes are defined before serving static files
+app.use('/api', (req, res, next) => {
+  next(); // Placeholder for API router
+});
+
 // Try to load frontend fake data if available (optional)
 let users = []
 let equipment = []
@@ -116,6 +121,59 @@ app.delete('/api/products/:id', (req, res) => {
   products = products.filter(x => x.Id_Products !== id)
   res.status(204).end()
 })
+
+// Add reservation routes
+const reservations = [];
+
+// Get all reservations
+app.get('/api/reservations', (req, res) => {
+  res.json(reservations);
+});
+
+// Create a new reservation
+app.post('/api/reservations', (req, res) => {
+  const { EquipmentId, UserId, StartDate, EndDate } = req.body;
+
+  // Check for overlapping reservations
+  const isOverlapping = reservations.some(r =>
+    r.EquipmentId === EquipmentId &&
+    ((new Date(StartDate) >= new Date(r.StartDate) && new Date(StartDate) <= new Date(r.EndDate)) ||
+     (new Date(EndDate) >= new Date(r.StartDate) && new Date(EndDate) <= new Date(r.EndDate)))
+  );
+
+  if (isOverlapping) {
+    return res.status(400).json({ error: 'Equipment is already reserved for this time.' });
+  }
+
+  const newReservation = {
+    Id: reservations.length + 1,
+    EquipmentId,
+    UserId,
+    StartDate,
+    EndDate,
+    Status: 'Pending'
+  };
+
+  reservations.push(newReservation);
+  res.status(201).json(newReservation);
+});
+
+// Update reservation status
+app.put('/api/reservations/:id', (req, res) => {
+  const id = parseInt(req.params.id, 10);
+  const { Status } = req.body;
+
+  const reservation = reservations.find(r => r.Id === id);
+  if (!reservation) {
+    return res.status(404).json({ error: 'Reservation not found.' });
+  }
+
+  reservation.Status = Status;
+  res.json(reservation);
+});
+
+// Serve static files
+app.use(express.static(path.join(__dirname, '..', 'frontend', 'webapp_client', 'public')));
 
 app.listen(port, () => {
   console.log(`Express backend skeleton listening on port ${port}`)

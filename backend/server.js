@@ -68,7 +68,7 @@ app.get('/api/users/:id', async (req, res) => {
   try {
     const id = parseId(req.params.id)
     const conn = await pool.getConnection()
-    const [rows] = await conn.query('SELECT * FROM users WHERE Id_User = ?', [id])
+    const [rows] = await conn.query('SELECT * FROM user_ WHERE Id_User = ?', [id])
     conn.release()
     if (rows.length === 0) return res.status(404).json({ error: 'Not found' })
     res.json(rows[0])
@@ -82,8 +82,10 @@ app.get('/api/users/:id', async (req, res) => {
 app.post('/api/users', async (req, res) => {
   try {
     const { Name, Email, Phone, DoB, JoinDate, Role, Speciality, Salary } = req.body
+    console.log(req.body)
+    console.log(Name, Email, Phone, DoB, JoinDate, Role, Speciality, Salary)
     const conn = await pool.getConnection()
-    const query = 'INSERT INTO users (Name, Email, Phone, DoB, JoinDate, Role, Speciality, Salary) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
+    const query = 'INSERT INTO user_ (Name, Email, Phone, DoB, JoinDate, Role, Speciality, Salary) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
     const [result] = await conn.query(query, [Name, Email, Phone, DoB, JoinDate, Role, Speciality, Salary || 0])
     conn.release()
     res.status(201).json({ Id_User: result.insertId, Name, Email, Phone, DoB, JoinDate, Role, Speciality, Salary })
@@ -101,14 +103,14 @@ app.put('/api/users/:id', async (req, res) => {
     const conn = await pool.getConnection()
     
     // Fetch existing to merge
-    const [existing] = await conn.query('SELECT * FROM users WHERE Id_User = ?', [id])
+    const [existing] = await conn.query('SELECT * FROM user_ WHERE Id_User = ?', [id])
     if (existing.length === 0) {
       conn.release()
       return res.status(404).json({ error: 'Not found' })
     }
     
     const merged = { ...existing[0], Name, Email, Phone, DoB, JoinDate, Role, Speciality, Salary }
-    const query = 'UPDATE users SET Name=?, Email=?, Phone=?, DoB=?, JoinDate=?, Role=?, Speciality=?, Salary=? WHERE Id_User=?'
+    const query = 'UPDATE user_ SET Name=?, Email=?, Phone=?, DoB=?, JoinDate=?, Role=?, Speciality=?, Salary=? WHERE Id_User=?'
     await conn.query(query, [merged.Name, merged.Email, merged.Phone, merged.DoB, merged.JoinDate, merged.Role, merged.Speciality, merged.Salary, id])
     conn.release()
     res.json(merged)
@@ -123,7 +125,7 @@ app.delete('/api/users/:id', async (req, res) => {
   try {
     const id = parseId(req.params.id)
     const conn = await pool.getConnection()
-    await conn.query('DELETE FROM users WHERE Id_User = ?', [id])
+    await conn.query('DELETE FROM user_ WHERE Id_User = ?', [id])
     conn.release()
     res.status(204).end()
   } catch (err) {

@@ -16,7 +16,7 @@ const pool = mysql.createPool({
   host: process.env.MYSQL_HOST || 'localhost',
   user: process.env.MYSQL_USER || 'root',
   password: process.env.MYSQL_PASSWORD || 'root',
-  database: process.env.MYSQL_DATABASE || 'gym_db',
+  database: process.env.MYSQL_DATABASE || 'gymproject',
   port: process.env.MYSQL_PORT || 3306,
   waitForConnections: true,
   connectionLimit: 10,
@@ -54,7 +54,7 @@ const parseId = (s) => parseInt(s, 10) || 0
 app.get('/api/users', async (req, res) => {
   try {
     const conn = await pool.getConnection()
-    const [rows] = await conn.query('SELECT * FROM users')
+    const [rows] = await conn.query('SELECT * FROM user_')
     conn.release()
     res.json(rows)
   } catch (err) {

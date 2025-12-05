@@ -459,34 +459,20 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { Users, User, Dumbbell, Calendar, DollarSign } from 'lucide-vue-next'
-import data from '../data/fake.json'
+// import data from '../data/fake.json' // kept for reference if needed
 
-// Helper: load from localStorage or fallback to fake.json
-const loadOrDefault = (key, fallback) => {
-  try {
-    const raw = localStorage.getItem(key)
-    if (raw) return JSON.parse(raw)
-  } catch (e) {
-    // ignore
-  }
-  return JSON.parse(JSON.stringify(fallback))
-}
+// API base (use Vite env VITE_API_BASE to override)
+const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3000'
 
-// Reactive state for data (persisted to localStorage)
-const users = ref(loadOrDefault('gym_users', data.users))
-const equipment = ref(loadOrDefault('gym_equipment', data.equipment))
-const products = ref(loadOrDefault('gym_products', data.products))
-const classes = ref(data.classes)
-const memberships = ref(data.memberships)
-const sales = ref(data.sales)
-
-const persist = () => {
-  localStorage.setItem('gym_users', JSON.stringify(users.value))
-  localStorage.setItem('gym_equipment', JSON.stringify(equipment.value))
-  localStorage.setItem('gym_products', JSON.stringify(products.value))
-}
+// State
+const users = ref([])
+const equipment = ref([])
+const products = ref([])
+const classes = ref([])
+const memberships = ref([])
+const sales = ref([])
 
 const activeTab = ref('dashboard')
 
@@ -499,29 +485,35 @@ const tabs = [
   { id: 'memberships', label: 'Memberships' }
 ]
 
-const stats = computed(() => ({
-  totalMembers: users.value.filter(u => u.Role === 'Customer').length,
-  activeMembers: memberships.value.filter(m => m.Status === 'Active').length,
-  totalEquipment: equipment.value.length,
-  excellentCondition: equipment.value.filter(e => e.Condition_ === 'Excellent').length,
-  totalClasses: classes.value.length,
-  totalRevenue: sales.value.reduce((sum, sale) => sum + sale.TotalPrice, 0).toFixed(2)
-}))
+// API helper
+const api = async (path, opts = {}) => {
+  const res = await fetch(`${API_BASE}${path}`, {
+    headers: { 'Content-Type': 'application/json' },
+    ...opts
+  })
+  if (!res.ok) {
+    const text = await res.text()
+    throw new Error(text || res.statusText)
+  }
+  if (res.status === 204) return null
+  return res.json()
+}
 
-const upcomingClasses = computed(() => classes.value.slice(0, 3))
-
-const recentSales = computed(() => {
-  return sales.value.slice(0, 3).map(sale => ({
-    ...sale,
-    ProductName: products.value.find(p => p.Id_Products === sale.Id_Products)?.ProductName || 'Unknown'
-  }))
-})
+// Normalize dates: convert YYYY-MM-DDTHH:MM:SS.000Z or similar to YYYY-MM-DD
+const normalizeDate = (dateStr) => {
+  if (!dateStr) return ''
+  if (typeof dateStr === 'string') return dateStr.split('T')[0]
+  if (dateStr instanceof Date) return dateStr.toISOString().split('T')[0]
+  return dateStr
+}
 
 const formatDate = (dateString) => {
+  if (!dateString) return '-'
   return new Date(dateString).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })
 }
 
 const formatDateTime = (dateString) => {
+  if (!dateString) return '-'
   return new Date(dateString).toLocaleString('en-US', {
     month: 'short',
     day: 'numeric',
@@ -545,7 +537,16 @@ const logout = () => {
   window.dispatchEvent(ev)
 }
 
-// ------------------ CRUD state & helpers for Users ------------------
+// Load initial data
+const loadAll = async () => {
+  try { users.value = await api('/api/users') } catch (e) { console.error('load users', e); users.value = [] }
+  try { equipment.value = await api('/api/equipment') } catch (e) { console.error('load equipment', e); equipment.value = [] }
+  try { products.value = await api('/api/products') } catch (e) { console.error('load products', e); products.value = [] }
+}
+
+onMounted(() => loadAll())
+
+// ------------------ CRUD for Users ------------------
 const showUserForm = ref(false)
 const showUserDetails = ref(false)
 const selectedUser = ref(null)
@@ -558,142 +559,118 @@ const openCreateUser = () => {
   showUserForm.value = true
 }
 
-const editUser = (u) => {
-  editingUser.value = true
-  userForm.value = JSON.parse(JSON.stringify(u))
-  showUserForm.value = true
-}
+const editUser = (u) => { editingUser.value = true; userForm.value = JSON.parse(JSON.stringify(u)); showUserForm.value = true }
+const viewUser = (u) => { selectedUser.value = JSON.parse(JSON.stringify(u)); showUserDetails.value = true }
+const closeUserModals = () => { showUserForm.value = false; showUserDetails.value = false; selectedUser.value = null }
 
-const viewUser = (u) => {
-  selectedUser.value = JSON.parse(JSON.stringify(u))
-  showUserDetails.value = true
-}
-
-const closeUserModals = () => {
-  showUserForm.value = false
-  showUserDetails.value = false
-  selectedUser.value = null
-}
-
-const removeUser = (id) => {
+const removeUser = async (id) => {
   if (!confirm('Delete this member?')) return
-  users.value = users.value.filter(u => u.Id_User !== id)
-  persist()
+  try {
+    await api(`/api/users/${id}`, { method: 'DELETE' })
+    users.value = users.value.filter(u => u.Id_User !== id)
+  } catch (e) { console.error(e); alert('Delete failed: ' + e.message) }
 }
 
-const saveUser = () => {
-  if (editingUser.value) {
-    const idx = users.value.findIndex(u => u.Id_User === userForm.value.Id_User)
-    if (idx !== -1) users.value[idx] = JSON.parse(JSON.stringify(userForm.value))
-  } else {
-    const maxId = users.value.reduce((m, u) => Math.max(m, u.Id_User || 0), 0)
-    const newUser = JSON.parse(JSON.stringify(userForm.value))
-    newUser.Id_User = maxId + 1
-    users.value.push(newUser)
-  }
-  persist()
-  closeUserModals()
+const saveUser = async () => {
+  try {
+    if (editingUser.value && userForm.value.Id_User) {
+      const id = userForm.value.Id_User
+      const payload = { ...userForm.value, DoB: normalizeDate(userForm.value.DoB), JoinDate: normalizeDate(userForm.value.JoinDate) }
+      await api(`/api/users/${id}`, { method: 'PUT', body: JSON.stringify(payload) })
+      const idx = users.value.findIndex(u => u.Id_User === id)
+      if (idx !== -1) users.value[idx] = JSON.parse(JSON.stringify(payload))
+    } else {
+      const payload = { ...userForm.value, DoB: normalizeDate(userForm.value.DoB), JoinDate: normalizeDate(userForm.value.JoinDate) }
+      const created = await api('/api/users', { method: 'POST', body: JSON.stringify(payload) })
+      users.value.push(created)
+    }
+    closeUserModals()
+  } catch (e) { console.error(e); alert('Save failed: ' + e.message) }
 }
 
-// ------------------ CRUD state & helpers for Equipment ------------------
+// ------------------ CRUD for Equipment ------------------
 const showEquipmentForm = ref(false)
 const showEquipmentDetails = ref(false)
 const selectedEquipment = ref(null)
 const editingEquipment = ref(false)
 const equipmentForm = ref({})
 
-const openCreateEquipment = () => {
-  editingEquipment.value = false
-  equipmentForm.value = { Name: '', Type: '', PurchaseDate: new Date().toISOString().slice(0,10), MaintenanceDate: '', Price: 0, Brand: '', Condition_: 'Good' }
-  showEquipmentForm.value = true
-}
+const openCreateEquipment = () => { editingEquipment.value = false; equipmentForm.value = { Name: '', Type: '', PurchaseDate: new Date().toISOString().slice(0,10), MaintenanceDate: '', Price: 0, Brand: '', Condition_: 'Good' }; showEquipmentForm.value = true }
+const editEquipment = (e) => { editingEquipment.value = true; equipmentForm.value = JSON.parse(JSON.stringify(e)); showEquipmentForm.value = true }
+const viewEquipment = (e) => { selectedEquipment.value = JSON.parse(JSON.stringify(e)); showEquipmentDetails.value = true }
+const closeEquipmentModals = () => { showEquipmentForm.value = false; showEquipmentDetails.value = false; selectedEquipment.value = null }
 
-const editEquipment = (e) => {
-  editingEquipment.value = true
-  equipmentForm.value = JSON.parse(JSON.stringify(e))
-  showEquipmentForm.value = true
-}
-
-const viewEquipment = (e) => {
-  selectedEquipment.value = JSON.parse(JSON.stringify(e))
-  showEquipmentDetails.value = true
-}
-
-const closeEquipmentModals = () => {
-  showEquipmentForm.value = false
-  showEquipmentDetails.value = false
-  selectedEquipment.value = null
-}
-
-const removeEquipment = (id) => {
+const removeEquipment = async (id) => {
   if (!confirm('Delete this equipment item?')) return
-  equipment.value = equipment.value.filter(e => e.Id_Equipment !== id)
-  persist()
+  try { await api(`/api/equipment/${id}`, { method: 'DELETE' }); equipment.value = equipment.value.filter(e => e.Id_Equipment !== id) } catch (e) { console.error(e); alert('Delete failed: ' + e.message) }
 }
 
-const saveEquipment = () => {
-  if (editingEquipment.value) {
-    const idx = equipment.value.findIndex(e => e.Id_Equipment === equipmentForm.value.Id_Equipment)
-    if (idx !== -1) equipment.value[idx] = JSON.parse(JSON.stringify(equipmentForm.value))
-  } else {
-    const maxId = equipment.value.reduce((m, e) => Math.max(m, e.Id_Equipment || 0), 0)
-    const newItem = JSON.parse(JSON.stringify(equipmentForm.value))
-    newItem.Id_Equipment = maxId + 1
-    equipment.value.push(newItem)
-  }
-  persist()
-  closeEquipmentModals()
+const saveEquipment = async () => {
+  try {
+    if (editingEquipment.value && equipmentForm.value.Id_Equipment) {
+      const id = equipmentForm.value.Id_Equipment
+      const payload = { ...equipmentForm.value, PurchaseDate: normalizeDate(equipmentForm.value.PurchaseDate), MaintenanceDate: normalizeDate(equipmentForm.value.MaintenanceDate) }
+      await api(`/api/equipment/${id}`, { method: 'PUT', body: JSON.stringify(payload) })
+      const idx = equipment.value.findIndex(e => e.Id_Equipment === id)
+      if (idx !== -1) equipment.value[idx] = JSON.parse(JSON.stringify(payload))
+    } else {
+      const payload = { ...equipmentForm.value, PurchaseDate: normalizeDate(equipmentForm.value.PurchaseDate), MaintenanceDate: normalizeDate(equipmentForm.value.MaintenanceDate) }
+      const created = await api('/api/equipment', { method: 'POST', body: JSON.stringify(payload) })
+      equipment.value.push(created)
+    }
+    closeEquipmentModals()
+  } catch (e) { console.error(e); alert('Save failed: ' + e.message) }
 }
 
-// ------------------ CRUD state & helpers for Products ------------------
+// ------------------ CRUD for Products ------------------
 const showProductForm = ref(false)
 const showProductDetails = ref(false)
 const selectedProduct = ref(null)
 const editingProduct = ref(false)
 const productForm = ref({})
 
-const openCreateProduct = () => {
-  editingProduct.value = false
-  productForm.value = { ProductName: '', Category: '', Description: '', Price: 0, StockQuantity: 0, DateAdded: new Date().toISOString().slice(0,10), Brand: '' }
-  showProductForm.value = true
-}
+const openCreateProduct = () => { editingProduct.value = false; productForm.value = { ProductName: '', Category: '', Description: '', Price: 0, StockQuantity: 0, DateAdded: new Date().toISOString().slice(0,10), Brand: '' }; showProductForm.value = true }
+const editProduct = (p) => { editingProduct.value = true; productForm.value = JSON.parse(JSON.stringify(p)); showProductForm.value = true }
+const viewProduct = (p) => { selectedProduct.value = JSON.parse(JSON.stringify(p)); showProductDetails.value = true }
+const closeProductModals = () => { showProductForm.value = false; showProductDetails.value = false; selectedProduct.value = null }
 
-const editProduct = (p) => {
-  editingProduct.value = true
-  productForm.value = JSON.parse(JSON.stringify(p))
-  showProductForm.value = true
-}
-
-const viewProduct = (p) => {
-  selectedProduct.value = JSON.parse(JSON.stringify(p))
-  showProductDetails.value = true
-}
-
-const closeProductModals = () => {
-  showProductForm.value = false
-  showProductDetails.value = false
-  selectedProduct.value = null
-}
-
-const removeProduct = (id) => {
+const removeProduct = async (id) => {
   if (!confirm('Delete this product?')) return
-  products.value = products.value.filter(p => p.Id_Products !== id)
-  persist()
+  try { await api(`/api/products/${id}`, { method: 'DELETE' }); products.value = products.value.filter(p => p.Id_Products !== id) } catch (e) { console.error(e); alert('Delete failed: ' + e.message) }
 }
 
-const saveProduct = () => {
-  if (editingProduct.value) {
-    const idx = products.value.findIndex(p => p.Id_Products === productForm.value.Id_Products)
-    if (idx !== -1) products.value[idx] = JSON.parse(JSON.stringify(productForm.value))
-  } else {
-    const maxId = products.value.reduce((m, p) => Math.max(m, p.Id_Products || 0), 0)
-    const newItem = JSON.parse(JSON.stringify(productForm.value))
-    newItem.Id_Products = maxId + 1
-    products.value.push(newItem)
-  }
-  persist()
-  closeProductModals()
+const saveProduct = async () => {
+  try {
+    if (editingProduct.value && productForm.value.Id_Products) {
+      const id = productForm.value.Id_Products
+      const payload = { ...productForm.value, DateAdded: normalizeDate(productForm.value.DateAdded) }
+      await api(`/api/products/${id}`, { method: 'PUT', body: JSON.stringify(payload) })
+      const idx = products.value.findIndex(p => p.Id_Products === id)
+      if (idx !== -1) products.value[idx] = JSON.parse(JSON.stringify(payload))
+    } else {
+      const payload = { ...productForm.value, DateAdded: normalizeDate(productForm.value.DateAdded) }
+      const created = await api('/api/products', { method: 'POST', body: JSON.stringify(payload) })
+      products.value.push(created)
+    }
+    closeProductModals()
+  } catch (e) { console.error(e); alert('Save failed: ' + e.message) }
 }
+
+// Stats
+const stats = computed(() => ({
+  totalMembers: users.value.filter(u => u.Role === 'Customer').length,
+  activeMembers: memberships.value.filter(m => m.Status === 'Active').length,
+  totalEquipment: equipment.value.length,
+  excellentCondition: equipment.value.filter(e => e.Condition_ === 'Excellent').length,
+  totalClasses: classes.value.length,
+  totalRevenue: sales.value.reduce((sum, sale) => sum + (sale.TotalPrice || 0), 0).toFixed(2)
+}))
+
+const upcomingClasses = computed(() => classes.value.slice(0, 3))
+
+const recentSales = computed(() => {
+  return sales.value.slice(0, 3).map(sale => ({ ...sale, ProductName: products.value.find(p => p.Id_Products === sale.Id_Products)?.ProductName || 'Unknown' }))
+})
 </script>
 
 <style scoped>

@@ -587,6 +587,8 @@ const loadAll = async () => {
   try { equipment.value = await api('/api/equipment') } catch (e) { console.error('load equipment', e); equipment.value = [] }
   try { products.value = await api('/api/products') } catch (e) { console.error('load products', e); products.value = [] }
   try { classes.value = await api('/api/classes') } catch (e) { console.error('load classes', e); classes.value = [] }
+  try { memberships.value = await api('/api/memberships') } catch (e) { console.error('load memberships', e); memberships.value = [] }
+  try { sales.value = await api('/api/sales') } catch (e) { console.error('load sales', e); sales.value = [] }
 }
 
 onMounted(() => loadAll())

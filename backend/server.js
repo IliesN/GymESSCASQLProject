@@ -421,6 +421,36 @@ app.delete('/api/classes/:id', async (req, res) => {
   }
 })
 
+// ==================== MEMBERSHIPS ====================
+// GET /api/memberships - list all memberships
+app.get('/api/memberships', async (req, res) => {
+  try {
+    const conn = await pool.getConnection()
+    const [rows] = await conn.query('SELECT * FROM memberships')
+    conn.release()
+    const formatted = formatDateArray(rows, ['StartDate', 'EndDate'])
+    res.json(formatted)
+  } catch (err) {
+    console.error('GET /api/memberships error:', err)
+    res.status(500).json({ error: err.message })
+  }
+})
+
+// ==================== SALES ====================
+// GET /api/sales - list all sales
+app.get('/api/sales', async (req, res) => {
+  try {
+    const conn = await pool.getConnection()
+    const [rows] = await conn.query('SELECT * FROM sales')
+    conn.release()
+    const formatted = formatDateArray(rows, ['SaleDate'])
+    res.json(formatted)
+  } catch (err) {
+    console.error('GET /api/sales error:', err)
+    res.status(500).json({ error: err.message })
+  }
+})
+
 app.listen(port, () => {
   console.log(`Express backend (MySQL) listening on port ${port}`)
 })

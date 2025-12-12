@@ -16,7 +16,7 @@
               :key="tab.id"
               @click="activeTab = tab.id"
               :class="[
-                'px-4 py-2 rounded-lg text-sm font-medium transition-colors',
+                'pointer-events-auto px-4 py-2 rounded-lg text-sm font-medium transition-colors',
                 activeTab === tab.id
                   ? 'bg-neutral-800 text-white'
                   : 'text-neutral-400 hover:text-neutral-200 hover:bg-neutral-900'
@@ -39,8 +39,8 @@
           v-for="tab in tabs"
           :key="tab.id"
           @click="activeTab = tab.id"
-          :class="[
-            'px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors',
+            :class="[
+            'pointer-events-auto px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors',
             activeTab === tab.id
               ? 'bg-neutral-800 text-white'
               : 'text-neutral-400 hover:text-neutral-200 hover:bg-neutral-900'
@@ -729,13 +729,26 @@ const stats = computed(() => ({
   totalEquipment: equipment.value.length,
   excellentCondition: equipment.value.filter(e => e.Condition_ === 'Excellent').length,
   totalClasses: classes.value.length,
-  totalRevenue: sales.value.reduce((sum, sale) => sum + (sale.TotalPrice || 0), 0).toFixed(2)
+  // Ensure TotalPrice is summed as number (mysql DECIMAL may be returned as string)
+  totalRevenue: sales.value.reduce((sum, sale) => {
+    const v = parseFloat(sale.TotalPrice)
+    return sum + (Number.isFinite(v) ? v : 0)
+  }, 0).toFixed(2)
 }))
 
 const upcomingClasses = computed(() => classes.value.slice(0, 3))
 
 const recentSales = computed(() => {
-  return sales.value.slice(0, 3).map(sale => ({ ...sale, ProductName: products.value.find(p => p.Id_Products === sale.Id_Products)?.ProductName || 'Unknown' }))
+  // sort by SaleDate desc and take top 3
+  return sales.value
+    .slice()
+    .sort((a, b) => new Date(b.SaleDate) - new Date(a.SaleDate))
+    .slice(0, 3)
+    .map(sale => ({
+      ...sale,
+      ProductName: products.value.find(p => p.Id_Products === sale.Id_Products)?.ProductName || 'Unknown',
+      TotalPrice: parseFloat(sale.TotalPrice) || 0
+    }))
 })
 
 // ------------------ CRUD for Classes ------------------

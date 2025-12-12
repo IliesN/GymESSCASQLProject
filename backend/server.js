@@ -336,6 +336,91 @@ app.delete('/api/products/:id', async (req, res) => {
   }
 })
 
+// ==================== CLASSES ====================
+// GET /api/classes - list all classes
+app.get('/api/classes', async (req, res) => {
+  try {
+    const conn = await pool.getConnection()
+    const [rows] = await conn.query('SELECT * FROM classes')
+    conn.release()
+    const formatted = formatDateArray(rows, ['Schedule'])
+    res.json(formatted)
+  } catch (err) {
+    console.error('GET /api/classes error:', err)
+    res.status(500).json({ error: err.message })
+  }
+})
+
+// GET /api/classes/:id - get class by id
+app.get('/api/classes/:id', async (req, res) => {
+  try {
+    const id = parseId(req.params.id)
+    const conn = await pool.getConnection()
+    const [rows] = await conn.query('SELECT * FROM classes WHERE Id_Classes = ?', [id])
+    conn.release()
+    if (rows.length === 0) return res.status(404).json({ error: 'Not found' })
+    res.json(formatDateFields(rows[0], ['Schedule']))
+  } catch (err) {
+    console.error('GET /api/classes/:id error:', err)
+    res.status(500).json({ error: err.message })
+  }
+})
+
+// POST /api/classes - create class
+app.post('/api/classes', async (req, res) => {
+  try {
+    let { ClassName, Schedule, Capacity, DifficultyLevel, Room, Id_User } = req.body
+    Schedule = normalizeDate(Schedule)
+    const conn = await pool.getConnection()
+    const query = 'INSERT INTO classes (ClassName, Schedule, Capacity, DifficultyLevel, Room, Id_User) VALUES (?, ?, ?, ?, ?, ?)'
+    const [result] = await conn.query(query, [ClassName, Schedule, Capacity, DifficultyLevel, Room, Id_User])
+    conn.release()
+    res.status(201).json(formatDateFields({ Id_Classes: result.insertId, ClassName, Schedule, Capacity, DifficultyLevel, Room, Id_User }, ['Schedule']))
+  } catch (err) {
+    console.error('POST /api/classes error:', err)
+    res.status(500).json({ error: err.message })
+  }
+})
+
+// PUT /api/classes/:id - update class
+app.put('/api/classes/:id', async (req, res) => {
+  try {
+    const id = parseId(req.params.id)
+    let { ClassName, Schedule, Capacity, DifficultyLevel, Room, Id_User } = req.body
+    Schedule = normalizeDate(Schedule)
+    const conn = await pool.getConnection()
+    
+    const [existing] = await conn.query('SELECT * FROM classes WHERE Id_Classes = ?', [id])
+    if (existing.length === 0) {
+      conn.release()
+      return res.status(404).json({ error: 'Not found' })
+    }
+    
+    const merged = { ...existing[0], ClassName, Schedule, Capacity, DifficultyLevel, Room, Id_User }
+    const query = 'UPDATE classes SET ClassName=?, Schedule=?, Capacity=?, DifficultyLevel=?, Room=?, Id_User=? WHERE Id_Classes=?'
+    await conn.query(query, [merged.ClassName, merged.Schedule, merged.Capacity, merged.DifficultyLevel, merged.Room, merged.Id_User, id])
+    conn.release()
+    res.json(formatDateFields(merged, ['Schedule']))
+  } catch (err) {
+    console.error('PUT /api/classes/:id error:', err)
+    res.status(500).json({ error: err.message })
+  }
+})
+
+// DELETE /api/classes/:id - delete class
+app.delete('/api/classes/:id', async (req, res) => {
+  try {
+    const id = parseId(req.params.id)
+    const conn = await pool.getConnection()
+    await conn.query('DELETE FROM classes WHERE Id_Classes = ?', [id])
+    conn.release()
+    res.status(204).end()
+  } catch (err) {
+    console.error('DELETE /api/classes/:id error:', err)
+    res.status(500).json({ error: err.message })
+  }
+})
+
 app.listen(port, () => {
   console.log(`Express backend (MySQL) listening on port ${port}`)
 })

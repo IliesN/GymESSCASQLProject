@@ -45,8 +45,8 @@ CREATE TABLE Sales(
    SaleDate DATE,
    BillingAddress TEXT,
    PRIMARY KEY(Id_Sales),
-   FOREIGN KEY(Id_Products) REFERENCES Products(Id_Products),
-   FOREIGN KEY(Id_User) REFERENCES User_(Id_User)
+   FOREIGN KEY(Id_Products) REFERENCES Products(Id_Products) ON DELETE CASCADE,
+   FOREIGN KEY(Id_User) REFERENCES User_(Id_User) ON DELETE CASCADE
 );
 
 CREATE TABLE Classes(
@@ -72,15 +72,15 @@ CREATE TABLE Memberships(
    Id_User INT NOT NULL,
    PRIMARY KEY(Id_Memberships),
    UNIQUE(Id_User),
-   FOREIGN KEY(Id_User) REFERENCES User_(Id_User)
+   FOREIGN KEY(Id_User) REFERENCES User_(Id_User) ON DELETE CASCADE
 );
 
 CREATE TABLE Use_(
    Id_Classes INT,
    Id_Equipment INT,
    PRIMARY KEY(Id_Classes, Id_Equipment),
-   FOREIGN KEY(Id_Classes) REFERENCES Classes(Id_Classes),
-   FOREIGN KEY(Id_Equipment) REFERENCES Equipment(Id_Equipment)
+   FOREIGN KEY(Id_Classes) REFERENCES Classes(Id_Classes) ON DELETE CASCADE,
+   FOREIGN KEY(Id_Equipment) REFERENCES Equipment(Id_Equipment) ON DELETE CASCADE
 );
 
 CREATE TABLE Book(
@@ -88,6 +88,6 @@ CREATE TABLE Book(
    Id_User INT,
    Date_ DATETIME,
    PRIMARY KEY(Id_Classes, Id_User),
-   FOREIGN KEY(Id_Classes) REFERENCES Classes(Id_Classes),
-   FOREIGN KEY(Id_User) REFERENCES User_(Id_User)
+   FOREIGN KEY(Id_Classes) REFERENCES Classes(Id_Classes) ON DELETE CASCADE,
+   FOREIGN KEY(Id_User) REFERENCES User_(Id_User) ON DELETE CASCADE
 );

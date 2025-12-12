@@ -612,7 +612,7 @@ const openCreateUser = () => {
 const editUser = (u) => { editingUser.value = true; userForm.value = JSON.parse(JSON.stringify(u)); showUserForm.value = true }
 const viewUser = (u) => { selectedUser.value = JSON.parse(JSON.stringify(u)); showUserDetails.value = true }
 const closeUserModals = () => { showUserForm.value = false; showUserDetails.value = false; selectedUser.value = null }
-
+/*
 const removeUser = async (id) => {
   if (!confirm('Delete this member?')) return
   try {
@@ -620,7 +620,21 @@ const removeUser = async (id) => {
     users.value = users.value.filter(u => u.Id_User !== id)
   } catch (e) { console.error(e); alert('Delete failed: ' + e.message) }
 }
-
+*/
+const removeUser = async (id) => {
+  if (!confirm('Delete this member?')) return
+  try {
+    await api(`/api/users/${id}`, { method: 'DELETE' })
+    users.value = users.value.filter(u => u.Id_User !== id)
+  } catch (e) {
+    // Check if it's a foreign key error
+    if (e.message.includes('foreign key')) {
+      alert('Cannot delete this user because they have assigned classes. Please delete their classes first.')
+    } else {
+      alert('Delete failed: ' + e.message)
+    }
+  }
+}
 const saveUser = async () => {
   try {
     if (editingUser.value && userForm.value.Id_User) {
